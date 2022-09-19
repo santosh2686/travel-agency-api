@@ -2,7 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const router = express.Router();
 
-const VehicleDetail = require('../models/VehicleDetail');
+const VehicleDetail = require('../models/vehicleDetail');
 
 router.get('/', async (req, res, next) => {
   const { query, sort } = req;
