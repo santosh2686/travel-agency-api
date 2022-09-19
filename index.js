@@ -7,7 +7,7 @@ const mongoose = require('mongoose');
 
 const port = process.env.PORT;
 
-
+/*
 const customerCategory = require('./src/routes/config/customerCategory');
 const expenseCategory = require('./src/routes/config/expenseCategory');
 const expenseType = require('./src/routes/config/expenseType');
@@ -18,8 +18,8 @@ const requestType = require('./src/routes/config/requestType');
 const staffCategory = require('./src/routes/config/staffCategory')
 const vehicleCategory = require('./src/routes/config/vehicleCategory');
 const vehicleType = require('./src/routes/config/vehicleType');
+*/
 
-/*
 // Routes import
 const appConfig = require('./src/routes/appConfig');
 const advancedBooking = require('./src/routes/advancedBooking');
@@ -37,7 +37,6 @@ const fixedVehiclePayment = require('./src/routes/fixedVehiclePayment');
 const vehicleReport = require('./src/routes/vehicleReport');
 const staffAccount = require('./src/routes/staffAccount');
 const advancedPayment = require('./src/routes/advancedPayment');
-*/
 
 const uri = 'mongodb+srv://admin:admin@travel.ecepf.mongodb.net/test?retryWrites=true&w=majority&ssl=true';
 // mongodb+srv://admin:<password>@travel.ecepf.mongodb.net/<dbname>?retryWrites=true&w=majority
@@ -82,7 +81,7 @@ app.use((req, res, next) => {
 
 //Routes which should handle requests
 
-
+/*
 app.use('/customer-category', customerCategory);
 app.use('/expense-category', expenseCategory);
 app.use('/expense-type', expenseType);
@@ -93,7 +92,8 @@ app.use('/request-type', requestType);
 app.use('/staff-category', staffCategory);
 app.use('/vehicle-category', vehicleCategory);
 app.use('/vehicle-type', vehicleType);
-/*
+*/
+
 app.use('/app-config', appConfig);
 
 app.use('/advanced-booking', advancedBooking);
@@ -111,7 +111,7 @@ app.use('/vehicle-report', vehicleReport)
 app.use('/fixed-vehicle-payment', fixedVehiclePayment)
 app.use('/staff-account', staffAccount)
 app.use('/advanced-payment', advancedPayment)
-*/
+
 
 app.get('/', (req, res) => {
   res.json({ "message": "The app is working fine" })
