@@ -18,7 +18,7 @@ const requestType = require('./src/routes/config/requestType');
 const staffCategory = require('./src/routes/config/staffCategory')
 const vehicleCategory = require('./src/routes/config/vehicleCategory');
 const vehicleType = require('./src/routes/config/vehicleType');
-*/
+
 
 // Routes import
 const appConfig = require('./src/routes/appConfig');
@@ -77,7 +77,7 @@ app.use((req, res, next) => {
   }
   next()
 });
-
+*/
 
 //Routes which should handle requests
 /*
@@ -91,7 +91,7 @@ app.use('/request-type', requestType);
 app.use('/staff-category', staffCategory);
 app.use('/vehicle-category', vehicleCategory);
 app.use('/vehicle-type', vehicleType);
-*/
+
 
 app.use('/app-config', appConfig);
 
@@ -122,7 +122,10 @@ app.use((error, req, res, next) => {
   res.status(error.status || 500);
   res.json(error)
 });
-
+*/
+app.get('/', (req, res) => {
+  res.json({ "message": "The app is working fine" })
+})
 app.listen(port, () => {
   console.log('travel-agency-api application running on port: ' + port);
 });
