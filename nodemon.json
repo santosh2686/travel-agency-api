@@ -1,0 +1,7 @@
+{
+  "env": {
+    "PORT": 8080,
+    "MONGO_ATLAS_USER_NAME": "admin",
+    "MONGO_ATLAS_PASSWORD": "admin"
+  }
+}
