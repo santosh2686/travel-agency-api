@@ -37,6 +37,8 @@ const fixedVehiclePayment = require('./src/routes/fixedVehiclePayment');
 const vehicleReport = require('./src/routes/vehicleReport');
 const staffAccount = require('./src/routes/staffAccount');
 const advancedPayment = require('./src/routes/advancedPayment');
+*/
+const staffAccount = require('./src/routes/staffAccount');
 
 const uri = 'mongodb+srv://admin:admin@travel.ecepf.mongodb.net/test?retryWrites=true&w=majority&ssl=true';
 // mongodb+srv://admin:<password>@travel.ecepf.mongodb.net/<dbname>?retryWrites=true&w=majority
@@ -77,9 +79,10 @@ app.use((req, res, next) => {
   }
   next()
 });
-*/
+
 
 //Routes which should handle requests
+
 /*
 app.use('/customer-category', customerCategory);
 app.use('/expense-category', expenseCategory);
@@ -91,7 +94,6 @@ app.use('/request-type', requestType);
 app.use('/staff-category', staffCategory);
 app.use('/vehicle-category', vehicleCategory);
 app.use('/vehicle-type', vehicleType);
-
 
 app.use('/app-config', appConfig);
 
@@ -110,6 +112,13 @@ app.use('/vehicle-report', vehicleReport)
 app.use('/fixed-vehicle-payment', fixedVehiclePayment)
 app.use('/staff-account', staffAccount)
 app.use('/advanced-payment', advancedPayment)
+*/
+
+app.get('/', (req, res) => {
+  res.json({ "message": "The app is working fine" })
+})
+
+app.use('/staff-account', staffAccount)
 
 // Error Handling
 app.use((req, res, next) => {
@@ -122,10 +131,7 @@ app.use((error, req, res, next) => {
   res.status(error.status || 500);
   res.json(error)
 });
-*/
-app.get('/', (req, res) => {
-  res.json({ "message": "The app is working fine" })
-})
+
 app.listen(port, () => {
   console.log('travel-agency-api application running on port: ' + port);
 });
