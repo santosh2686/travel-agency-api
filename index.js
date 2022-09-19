@@ -31,7 +31,7 @@ const fixedRequest = require('./src/routes/fixedRequest');
 const staff = require('./src/routes/staff');
 const user = require('./src/routes/user');
 const vehicle = require('./src/routes/vehicle');
-const vehicleDetail = require('./src/routes/vehicleDetail');
+// const vehicleDetail = require('./src/routes/vehicleDetail');
 const report = require('./src/routes/report');
 const fixedVehiclePayment = require('./src/routes/fixedVehiclePayment');
 const vehicleReport = require('./src/routes/vehicleReport');
@@ -105,7 +105,7 @@ app.use('/fixed-request', fixedRequest)
 app.use('/staff', staff);
 app.use('/user', user);
 app.use('/vehicle', vehicle);
-app.use('/vehicle-detail', vehicleDetail);
+// app.use('/vehicle-detail', vehicleDetail);
 app.use('/report', report);
 app.use('/vehicle-report', vehicleReport)
 app.use('/fixed-vehicle-payment', fixedVehiclePayment)
