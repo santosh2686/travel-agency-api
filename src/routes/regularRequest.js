@@ -4,8 +4,10 @@ const router = express.Router();
 
 const RegularRequest = require('../models/regularRequest');
 const RequestType = require('../models/config/requestType');
+
 const Report = require('../models/report');
 const VehicleReport = require('../models/vehicleReport');
+const StaffAccount  = require('../models/staffAccount');
 
 const { amountDifference } = require('../utils');
 const { getYear, getMonth } = require('../utils/date');
@@ -54,11 +56,19 @@ router.get('/:id', async (req, res, next) => {
   }
 });
 
+const getStaffTotalOtherCharges = (otherCharges = {}) => {
+  const { nightHalt, driverAllowance } = otherCharges
+  return {
+    nightHalt: nightHalt.isAddedToStaffAccount ? nightHalt.amount : 0,
+    driverAllowance: driverAllowance.isAddedToStaffAccount ? driverAllowance.amount : 0,
+  }
+}
+
 router.post('/', async (req, res, next) => {
   const { body } = req;
   const {
     requestProfit, dropDateTime, vehicle, vehicleCategory,
-    requestType,
+    staffCategory, staff, requestType,
   } = body;
 
   const request = new RegularRequest({
@@ -107,6 +117,25 @@ router.post('/', async (req, res, next) => {
       }
   
       await VehicleReport.findOneAndUpdate(vehicleReportFilter, vehicleReportRequestData, {
+        upsert: true,
+      });
+    }
+
+    if (staffCategory && staff) {
+      const staffAccountFilter = {
+        year: requestYear,
+        month: requestMonth,
+        staff,
+        staffCategory,
+      }
+
+      const staffAccountRequestData = {
+        $inc: {
+          totalNightHalt: 0,
+          totalDriverAllowance: 0,
+        }
+      }
+      await StaffAccount.findOneAndUpdate(staffAccountFilter, staffAccountRequestData, {
         upsert: true,
       });
     }
@@ -189,6 +218,7 @@ router.delete('/:id', async (req, res, next) => {
     const originalData = await RegularRequest.findById(id).lean()
     const {
       requestProfit, dropDateTime, vehicleCategory, vehicle, requestType,
+      staffCategory, staff,
     } = originalData
     const requestYear = getYear(dropDateTime)
     const requestMonth = getMonth(dropDateTime)
@@ -196,7 +226,7 @@ router.delete('/:id', async (req, res, next) => {
     const filter = {
       year: requestYear,
       month: requestMonth,
-    };
+    }
 
     const requestData = {
       $inc: {
@@ -227,6 +257,26 @@ router.delete('/:id', async (req, res, next) => {
         },
       }
       await VehicleReport.findOneAndUpdate(vehicleReportFilter, vehicleReportRequestData, {
+        upsert: true,
+      });
+    }
+
+    if (staffCategory && staff) {
+      const staffAccountFilter = {
+        year: requestYear,
+        month: requestMonth,
+        staff,
+        staffCategory,
+      }
+
+      const staffAccountRequestData = {
+        $inc: {
+          totalNightHalt: 0,
+          totalDriverAllowance: 0,
+        }
+      }
+
+      await StaffAccount.findOneAndUpdate(staffAccountFilter, staffAccountRequestData, {
         upsert: true,
       });
     }

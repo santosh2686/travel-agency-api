@@ -5,6 +5,7 @@ const router = express.Router();
 const FixedRequest = require('../models/fixedRequest');
 const RequestType = require('../models/config/requestType');
 const FixedVehiclePayment = require('../models/fixedVehiclePayment');
+const VehicleReport = require('../models/vehicleReport');
 
 const { amountDifference } = require('../utils');
 const { getYear, getMonth } = require('../utils/date');
@@ -59,7 +60,6 @@ router.get('/:id', async (req, res, next) => {
   }
 });
 
-
 const getTotalOtherCharges = (otherCharges = {}) => {
   const { toll, parking, nightHalt, driverAllowance } = otherCharges
   return {
@@ -75,16 +75,20 @@ router.post('/', async (req, res, next) => {
   const {
     dropDateTime, requestType, totalKm, totalHr,
     extraHr, regularVehicle, otherCharges, requestPackage,
+    vehicleCategory, vehicle,
   } = body
 
   const requestTypeData = await RequestType.findById(requestType).lean();
   const { name: requestTypeName } = requestTypeData
+
   const isLocalRequest = requestTypeName === 'local'
+  const requestYear = getYear(dropDateTime)
+  const requestMonth = getMonth(dropDateTime)
 
   const filter = {
     vehicle: regularVehicle,
-    year: getYear(dropDateTime),
-    month: getMonth(dropDateTime),
+    year: requestYear,
+    month: requestMonth,
   }
 
   const {
@@ -115,6 +119,26 @@ router.post('/', async (req, res, next) => {
     await FixedVehiclePayment.findOneAndUpdate(filter, requestData, {
       upsert: true,
     });
+
+    if (vehicleCategory && vehicle) {
+      const vehicleReportFilter = {
+        year: requestYear,
+        month: requestMonth,
+        vehicle,
+        vehicleCategory,
+      }
+
+      const vehicleReportRequestData = {
+        $inc: {
+          totalLocalRequests: isLocalRequest ? 1 : 0,
+          totalOutStationRequests: isLocalRequest ? 0 : 1,
+        },
+      }
+      await VehicleReport.findOneAndUpdate(vehicleReportFilter, vehicleReportRequestData, {
+        upsert: true,
+      });
+    }
+
     const data = await request.save()
     res.status(201).json({
       message: 'added successful',
@@ -133,9 +157,11 @@ router.post('/', async (req, res, next) => {
 router.patch('/:id', async (req, res, next) => {
   const { params: { id }, body } = req;
   const {
-    dropDateTime, otherCharges = {}, totalKm, totalHr, extraHr,
+    dropDateTime, otherCharges = {}, totalKm, totalHr,
+    extraHr, requestType, vehicleCategory, vehicle,
   } = body
   try {
+    let totalRequestCount = {}
     const originalData = await FixedRequest.findById(id).lean()
     const {
       dropDateTime: originalDropDateTime, regularVehicle,
@@ -143,8 +169,13 @@ router.patch('/:id', async (req, res, next) => {
       totalKm: originalTotalKm,
       totalHr: originalTotalHr,
       extraHr: originalExtraHr,
+      requestType: originalRequestType,
+      vehicleCategory: originalVehicleCategory,
+      vehicle: originalVehicle
     } = originalData
     const requestDropDateTime = dropDateTime || originalDropDateTime
+    const vehicleReportVehicleCategory = vehicleCategory || originalVehicleCategory
+    const vehicleReportVehicle = vehicle || originalVehicle
 
     const {
       toll, parking, nightHalt, driverAllowance,
@@ -154,6 +185,32 @@ router.patch('/:id', async (req, res, next) => {
       toll: originalToll, parking: originalParking,
       nightHalt: originalNightHalt, driverAllowance: originalDriverAllowance,
     } = getTotalOtherCharges(originalOtherCharges)
+
+    if (requestType !== originalRequestType) {
+      const requestTypeData = await RequestType.findById(requestType).lean();
+      const { name: requestTypeName } = requestTypeData
+      const isLocalRequest = requestTypeName === 'local'
+      totalRequestCount = {
+        totalLocalRequests: isLocalRequest ? 1 : -1,
+        totalOutStationRequests: isLocalRequest ? -1 : 1,
+      }
+      if (vehicleReportVehicleCategory && vehicleReportVehicle) {
+          const vehicleReportFilter = {
+            vehicleCategory: vehicleReportVehicleCategory,
+            vehicle: vehicleReportVehicle,
+            year: getYear(requestDropDateTime),
+            month: getMonth(requestDropDateTime),
+          }
+
+          const vehicleReportRequestData = {
+            $inc: totalRequestCount,
+          }
+
+          await VehicleReport.findOneAndUpdate(vehicleReportFilter, vehicleReportRequestData, {
+            upsert: true,
+          });
+      }
+    }
 
     const filter = {
       vehicle: regularVehicle,
@@ -170,8 +227,10 @@ router.patch('/:id', async (req, res, next) => {
         totalParking: amountDifference(parking, originalParking),
         totalNightHalt: amountDifference(nightHalt, originalNightHalt),
         totalDriverAllowance: amountDifference(driverAllowance, originalDriverAllowance),
+        ...totalRequestCount,
       }
     }
+
     await FixedVehiclePayment.findOneAndUpdate(filter, requestData, {
       upsert: true,
     });
@@ -193,14 +252,21 @@ router.delete('/:id', async (req, res, next) => {
   try {
     const originalData = await FixedRequest.findById(id).lean()
     const {
-      dropDateTime, regularVehicle, otherCharges,
-      totalKm, totalHr, extraHr,
+      dropDateTime, regularVehicle, otherCharges, requestType,
+      totalKm, totalHr, extraHr, vehicleCategory, vehicle,
     } = originalData
+
+    const requestTypeData = await RequestType.findById(requestType).lean();
+    const { name: requestTypeName } = requestTypeData
+
+    const isLocalRequest = requestTypeName === 'local'
+    const requestYear = getYear(dropDateTime)
+    const requestMonth = getMonth(dropDateTime)
 
     const filter = {
       vehicle: regularVehicle,
-      year: getYear(dropDateTime),
-      month: getMonth(dropDateTime),
+      year: requestYear,
+      month: requestMonth,
     }
 
     const {
@@ -216,12 +282,33 @@ router.delete('/:id', async (req, res, next) => {
         totalParking: -parking,
         totalNightHalt: -nightHalt,
         totalDriverAllowance: -driverAllowance,
+        totalLocalRequests: isLocalRequest ? -1 : 0,
+        totalOutStationRequests: isLocalRequest ? 0 : -1,
       },
     }
 
     await FixedVehiclePayment.findOneAndUpdate(filter, requestData, {
       upsert: true,
     });
+
+    if (vehicleCategory && vehicle) {
+      const vehicleReportFilter = {
+        year: requestYear,
+        month: requestMonth,
+        vehicle,
+        vehicleCategory,
+      }
+
+      const vehicleReportRequestData = {
+        $inc: {
+          totalLocalRequests: isLocalRequest ? -1 : 0,
+          totalOutStationRequests: isLocalRequest ? 0 : -1,
+        },
+      }
+      await VehicleReport.findOneAndUpdate(vehicleReportFilter, vehicleReportRequestData, {
+        upsert: true,
+      });
+    }
 
     await FixedRequest.deleteOne({ _id: id });
     res.status(200).json({
